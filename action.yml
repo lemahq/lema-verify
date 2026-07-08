@@ -1,0 +1,20 @@
+name: description check
+description: >-
+  Checks a PR's diff against its own description and linked issue. It
+  comments; it doesn't block.
+inputs:
+  api-url:
+    description: Base URL of the lema verify API (e.g. https://api.lema.sh)
+    required: true
+  github-token:
+    description: >-
+      Token used to read/post the PR comment. GitHub does not inject
+      GITHUB_TOKEN into an Action's environment by default, and an action's
+      own metadata (this file) cannot reference the github context to default
+      it — so the calling workflow MUST pass the token in (see the workflow
+      snippet in the README). Required at call time even though marked
+      optional here.
+    required: false
+runs:
+  using: node20
+  main: index.js

@@ -1,0 +1,25 @@
+name: release
+
+# Cut a release: git tag vX.Y.Z && git push origin vX.Y.Z (also move the
+# floating major tag: git tag -f v1 && git push -f origin v1). On the tag push
+# this tests the action and creates a GitHub Release — the Releases page is the
+# changelog. Uses the runner's gh CLI; no third-party actions.
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write # create GitHub Releases
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node --test test/*.test.js
+      - run: gh release create "${GITHUB_REF_NAME}" --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}

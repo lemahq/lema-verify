@@ -663,3 +663,64 @@ test('empty annotations list: check run posted without an annotations field', as
   assert.ok(checkBody);
   assert.equal('annotations' in checkBody.output, false, 'empty annotations must be omitted, not sent as []');
 });
+
+// ---- record-decisions consent input (WP5, verify-standalone) -----------
+// The committed workflow line IS the settles consent; the Action's only job
+// is to forward it faithfully. Anything other than exactly 'true' — absent,
+// 'false', or garbage — must NOT read as consent.
+
+function captureVerifyBody() {
+  let captured = { body: null };
+  const fetchImpl = makeFetchStub([
+    {
+      match: (url) => String(url).includes('oidc.example'),
+      respond: () => jsonResponse(200, { value: 'fake-oidc-jwt' }),
+    },
+    {
+      match: (url) => String(url).includes('/verify'),
+      respond: (url, opts) => {
+        captured.body = JSON.parse(opts.body);
+        return jsonResponse(200, { schema_version: 1, run_id: 'r1', card_state: 'checked', markdown: '', summary: {} });
+      },
+    },
+  ]);
+  return { captured, fetchImpl };
+}
+
+test("record-decisions input 'true': record_decisions=true forwarded", async () => {
+  const fs = makeFsStub();
+  const exec = makeExecStub({ diff: 'diff --git a/x b/x\n+hi\n', numstat: '1\t0\tx\n' });
+  const { captured, fetchImpl } = captureVerifyBody();
+
+  const result = await runWith(baseEnv({ 'INPUT_RECORD-DECISIONS': 'true' }), fetchImpl, exec, fs);
+
+  assert.equal(result.exitCode, 0);
+  assert.ok(captured.body, 'expected a /verify POST body');
+  assert.equal(captured.body.record_decisions, true);
+});
+
+test('record-decisions input absent: no consent forwarded', async () => {
+  const fs = makeFsStub();
+  const exec = makeExecStub({ diff: 'diff --git a/x b/x\n+hi\n', numstat: '1\t0\tx\n' });
+  const { captured, fetchImpl } = captureVerifyBody();
+
+  const result = await runWith(baseEnv(), fetchImpl, exec, fs);
+
+  assert.equal(result.exitCode, 0);
+  assert.ok(captured.body, 'expected a /verify POST body');
+  assert.notEqual(captured.body.record_decisions, true, 'absent input must never read as consent');
+});
+
+test("record-decisions input 'false' or garbage: no consent forwarded", async () => {
+  for (const value of ['false', 'True ', 'yes', '1']) {
+    const fs = makeFsStub();
+    const exec = makeExecStub({ diff: 'diff --git a/x b/x\n+hi\n', numstat: '1\t0\tx\n' });
+    const { captured, fetchImpl } = captureVerifyBody();
+
+    const result = await runWith(baseEnv({ 'INPUT_RECORD-DECISIONS': value }), fetchImpl, exec, fs);
+
+    assert.equal(result.exitCode, 0);
+    assert.ok(captured.body, `expected a /verify POST body for ${JSON.stringify(value)}`);
+    assert.notEqual(captured.body.record_decisions, true, `input ${JSON.stringify(value)} must never read as consent`);
+  }
+});

@@ -126,6 +126,11 @@ async function runWith(env, fetchImpl, execImpl, fsImpl) {
     }
     if (!idToken) return notRun('OIDC token request returned no value');
 
+    // (4b) Settles consent (WP5, verify-standalone): the committed
+    // `record-decisions: true` line in the calling workflow IS the consent —
+    // forwarded faithfully, and only the exact string 'true' reads as yes.
+    const recordDecisions = (env['INPUT_RECORD-DECISIONS'] || '') === 'true';
+
     // (5) POST /verify.
     const body = {
       schema_version: SCHEMA_VERSION,
@@ -135,6 +140,7 @@ async function runWith(env, fetchImpl, execImpl, fsImpl) {
       numstat,
       task_file: taskFile,
       head_ref: headRef,
+      record_decisions: recordDecisions,
     };
 
     let verifyResp;

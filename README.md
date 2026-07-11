@@ -47,6 +47,10 @@ jobs:
         with:
           api-url: https://api.lema.sh
           github-token: ${{ github.token }}
+          # Drafts a decision record when a PR settles a real choice — stored in
+          # lema until a maintainer accepts or dismisses it. Delete this line to
+          # run description-checks only.
+          record-decisions: true
 ```
 
 `id-token: write` is required — the Action authenticates to the lema
@@ -59,6 +63,12 @@ GitHub does not inject `GITHUB_TOKEN` into an Action's environment on its
 own, and an action's own metadata cannot default an input from the `github`
 context — `${{ github.token }}` is only available in a workflow's expression
 context, which is why it is wired here rather than defaulted in the Action.
+`record-decisions: true` is the settles opt-in, and the committed line is
+itself the consent: when set, a PR that settles a real choice gets a decision
+record drafted and stored in lema until a maintainer accepts or dismisses it
+(nothing is ever accepted automatically). Delete the line — or set anything
+other than `true` — and the Action runs description-checks only, with zero
+drafting and zero storage of decision text.
 `checks: write` is optional but recommended: with it, the Action also posts
 a check run with inline annotations on the diff lines the card's
 "not described" findings point at. The check's conclusion is always
@@ -132,7 +142,10 @@ task."
 review ("we are not a reviewer") · authorship ("we never label a PR
 agent-authored") · "retention-free" (the provable sentence instead: *we
 don't store your code — diffs are processed in memory and discarded when
-the check completes; outcome counts and categories are kept; judging runs
+the check completes; outcome counts and categories are kept; with
+`record-decisions: true` a drafted decision record — title, chosen
+direction, rationale, rejected alternatives derived from the PR — is stored
+until a maintainer accepts or dismisses it; judging runs
 on Google Vertex AI under its linked terms*) · "every CI event makes the
 judge better" (true only for public and opt-in repos; we say that) · any
 precedent language on repos with no record — the precedent block is

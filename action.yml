@@ -15,6 +15,14 @@ inputs:
       snippet in the README). Required at call time even though marked
       optional here.
     required: false
+  record-decisions:
+    description: >-
+      Drafts a decision record when a PR settles a real choice - stored in
+      lema until a maintainer accepts or dismisses it. This committed line is
+      the consent for that write: set to 'true' to opt in, delete the line to
+      run description-checks only. Anything other than 'true' means off.
+    required: false
+    default: 'false'
 runs:
   using: node24
   main: index.js

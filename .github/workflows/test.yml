@@ -9,10 +9,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
-          node-version: '20' # matches the action runtime (runs.using: node20)
+          node-version: '24' # matches the action runtime (runs.using: node24)
       # Explicit file, not `node --test test/`: Node 24 treats a bare dir arg
       # as a module and fails to recurse (see the lema monorepo notes).
       - run: node --test test/*.test.js
